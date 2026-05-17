@@ -63,7 +63,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     lowerBound: 0,
     upperBound: 1,
     duration: const Duration(
-      milliseconds: 1600,
+      milliseconds: 2800,
     ),
   );
 
