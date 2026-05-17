@@ -6,6 +6,33 @@ FLauncher is an open-source alternative launcher for Android TV, built with [Flu
 ## Download
 Get the latest build from the [releases](https://github.com/osrosal/flauncher/releases) page, you can look for older builds on the [actions](https://github.com/CocoCR300/flauncher/actions) tab, where they are uploaded as artifacts.
 
+## Build debug APK with Docker (no local Flutter/Java setup)
+You can build a debug APK without installing Flutter, Android SDK, or Java on your host.
+
+### Requirements
+- Docker
+- Git
+
+### Build command
+```shell
+./tools/build-debug-apk-docker.sh
+```
+
+Optional arguments:
+```shell
+# custom short commit hash and build-name
+./tools/build-debug-apk-docker.sh abc1234 2026.05.17
+```
+
+Output APK:
+```text
+build/app/outputs/flutter-apk/flauncher-debug-<shortsha>.apk
+```
+
+Notes:
+- Debug package uses a different application ID suffix (`.debug`), so it can be installed in parallel with the stable release.
+- The app label and version suffix include the short commit hash (from `GIT_SHA_SHORT`).
+
 ## Features
 For a list of the changes introduced by this fork from the original, see the [CHANGELOG](CHANGELOG.md) file.
 
