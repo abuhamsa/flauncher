@@ -51,7 +51,7 @@ secretProperties.setProperty("signing_key_alias", "${System.getenv('FLAUNCHER_SI
 
 android {
     defaultConfig {
-        applicationId "me.efesser.flauncher"
+        applicationId "io.abuhamsa.flauncher"
         compileSdk 35
         minSdk 21
         targetSdk 35
