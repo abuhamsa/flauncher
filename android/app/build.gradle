@@ -39,6 +39,11 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+def gitShaShort = System.getenv('GIT_SHA_SHORT')
+if (gitShaShort == null || gitShaShort.trim().isEmpty()) {
+    gitShaShort = 'local'
+}
+
 def secretProperties = new Properties()
 secretProperties.setProperty("signing_keystore_password", "${System.getenv('FLAUNCHER_KEYSTORE_PASSWORD')}")
 secretProperties.setProperty("signing_key_password", "${System.getenv('FLAUNCHER_SIGNING_KEY_PASSWORD')}")
@@ -52,6 +57,7 @@ android {
         targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        manifestPlaceholders = [appLabel: "FLauncher"]
     }
 
     signingConfigs {
@@ -66,6 +72,9 @@ android {
 
     buildTypes {
         debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug+${gitShaShort}"
+            manifestPlaceholders.appLabel = "FLauncher Debug (${gitShaShort})"
             signingConfig signingConfigs.debug
         }
         release {

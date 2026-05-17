@@ -1,0 +1,52 @@
+name: Debug APK build
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - master
+    paths-ignore:
+      - '**/*.md'
+
+jobs:
+  debug-apk:
+    name: Build debug APK
+    env:
+      OUTPUT_DIR: build/app/outputs/flutter-apk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.24.5
+          channel: stable
+
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set debug build metadata
+        id: debug_meta
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "debug_build_name=$(date '+%Y.%m.%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Build debug APK
+        env:
+          GIT_SHA_SHORT: ${{ steps.debug_meta.outputs.short_sha }}
+        run: |
+          flutter --no-color build apk --debug --build-name "${{ steps.debug_meta.outputs.debug_build_name }}"
+          cp "$OUTPUT_DIR/app-debug.apk" "$OUTPUT_DIR/flauncher-debug-${{ steps.debug_meta.outputs.short_sha }}.apk"
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flauncher-debug-${{ steps.debug_meta.outputs.short_sha }}
+          path: ${{ env.OUTPUT_DIR }}/flauncher-debug-${{ steps.debug_meta.outputs.short_sha }}.apk
+          retention-days: 30
