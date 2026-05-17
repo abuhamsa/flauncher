@@ -71,13 +71,11 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    FocusManager.instance.addHighlightModeListener(_focusHighlightModeChanged);
     _appImageLoadFuture = _loadAppBannerOrIcon(Provider.of<AppsService>(context, listen: false));
   }
 
   @override
   void dispose() {
-    FocusManager.instance.removeHighlightModeListener(_focusHighlightModeChanged);
     _animation.dispose();
 
     super.dispose();
@@ -255,14 +253,9 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     );
   }
 
-  void _focusHighlightModeChanged(FocusHighlightMode mode)
-  {
-    setState(() { });
-  }
-
   bool _shouldHighlight(BuildContext context)
   {
-    return FocusManager.instance.highlightMode == FocusHighlightMode.traditional && Focus.of(context).hasFocus;
+    return Focus.of(context).hasFocus;
   }
 
   Matrix4 _scaleTransform(BuildContext context) {
