@@ -61,9 +61,9 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   late final AnimationController _animation = AnimationController(
     vsync: this,
     lowerBound: 0,
-    upperBound: 255,
+    upperBound: 1,
     duration: const Duration(
-      milliseconds: 800,
+      milliseconds: 2800,
     ),
   );
 
@@ -71,13 +71,11 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    FocusManager.instance.addHighlightModeListener(_focusHighlightModeChanged);
     _appImageLoadFuture = _loadAppBannerOrIcon(Provider.of<AppsService>(context, listen: false));
   }
 
   @override
   void dispose() {
-    FocusManager.instance.removeHighlightModeListener(_focusHighlightModeChanged);
     _animation.dispose();
 
     super.dispose();
@@ -140,20 +138,27 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                     selector: (_, settingsService) => settingsService.appHighlightAnimationEnabled && shouldHighlight,
                     builder: (context, highlight, _) {
                       if (highlight) {
-                        _animation.repeat(reverse: true);
+                        _animation.repeat();
                         return AnimatedBuilder(
                           animation: _animation,
-                          builder: (context, child) => IgnorePointer(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.white.withAlpha(_animation.value.round()),
-                                  width: 3
+                          builder: (context, child) {
+                            final phase = _animation.value;
+                            final whitePhase = phase < 0.5;
+                            final localPhase = (phase % 0.5) / 0.5;
+                            final alpha = (255 * (1 - (2 * localPhase - 1).abs())).round();
+
+                            return IgnorePointer(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (whitePhase ? Colors.white : Colors.black).withAlpha(alpha),
+                                    width: 3,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         );
                       }
 
@@ -255,14 +260,9 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     );
   }
 
-  void _focusHighlightModeChanged(FocusHighlightMode mode)
-  {
-    setState(() { });
-  }
-
   bool _shouldHighlight(BuildContext context)
   {
-    return FocusManager.instance.highlightMode == FocusHighlightMode.traditional && Focus.of(context).hasFocus;
+    return Focus.of(context).hasFocus;
   }
 
   Matrix4 _scaleTransform(BuildContext context) {
