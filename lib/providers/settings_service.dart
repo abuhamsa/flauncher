@@ -18,12 +18,14 @@
 
 import 'dart:async';
 
+import 'package:flauncher/models/app_card_highlight_animation_style.dart';
 import 'package:flauncher/models/app_card_highlight_gradient_preset.dart';
 import 'package:flauncher/widgets/settings/back_button_actions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _appHighlightAnimationEnabledKey = "app_highlight_animation_enabled";
+const _appCardHighlightAnimationStyleKey = "app_card_highlight_animation_style";
 const _appCardHighlightGradientPresetKey = "app_card_highlight_gradient_preset";
 const _appKeyClickEnabledKey = "app_key_click_enabled";
 const _autoHideAppBar = "auto_hide_app_bar";
@@ -46,6 +48,10 @@ class SettingsService extends ChangeNotifier {
   String get appCardHighlightGradientPreset =>
       _sharedPreferences.getString(_appCardHighlightGradientPresetKey) ??
       AppCardHighlightGradientPreset.moonlight.name;
+
+    String get appCardHighlightAnimationStyle =>
+      _sharedPreferences.getString(_appCardHighlightAnimationStyleKey) ??
+      AppCardHighlightAnimationStyle.rotate.name;
 
   bool get appKeyClickEnabled => _sharedPreferences.getBool(_appKeyClickEnabledKey) ?? true;
 
@@ -80,6 +86,11 @@ class SettingsService extends ChangeNotifier {
 
   Future<void> setAppCardHighlightGradientPreset(String value) async {
     await _sharedPreferences.setString(_appCardHighlightGradientPresetKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setAppCardHighlightAnimationStyle(String value) async {
+    await _sharedPreferences.setString(_appCardHighlightAnimationStyleKey, value);
     notifyListeners();
   }
 

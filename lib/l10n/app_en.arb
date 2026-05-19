@@ -5,6 +5,7 @@
     "alphabetical": "Alphabetical",
     "appCardHighlightAnimation": "App card highlight animation",
     "appCardHighlightGradient": "App card highlight gradient",
+    "appCardHighlightStyle": "App card highlight style",
     "appInfo": "Application info",
     "appKeyClick": "Click sound on key press",
     "applications": "Applications",
@@ -22,9 +23,12 @@
     "dialogOptionAppCardHighlightGradientAuroraBlue": "Aurora Blue",
     "dialogOptionAppCardHighlightGradientMoonlight": "Moonlight",
     "dialogOptionAppCardHighlightGradientNightSteel": "Night Steel",
+    "dialogOptionAppCardHighlightStyleBlink": "Blink",
+    "dialogOptionAppCardHighlightStyleRotate": "Rotate",
     "dialogTextNoFileExplorer": "Please install a file explorer in order to pick a picture.",
     "dialogTitleBackButtonAction": "Choose the back button action",
     "dialogTitleAppCardHighlightGradient": "Choose the highlight gradient",
+    "dialogTitleAppCardHighlightStyle": "Choose the highlight style",
     "disambiguateCategoryTitle": "{title} (Category)",
     "@disambiguateCategoryTitle": {
         "placeholders": {

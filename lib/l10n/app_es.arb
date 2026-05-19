@@ -5,6 +5,7 @@
     "alphabetical": "Alfabético",
     "appCardHighlightAnimation": "Resaltar aplicaciones",
     "appCardHighlightGradient": "Gradiente de resaltado",
+    "appCardHighlightStyle": "Estilo de resaltado",
     "appInfo": "Datos de la aplicación",
     "appKeyClick": "Sonido al presionar una tecla",
     "applications": "Aplicaciones",
@@ -22,9 +23,12 @@
     "dialogOptionAppCardHighlightGradientAuroraBlue": "Aurora Blue",
     "dialogOptionAppCardHighlightGradientMoonlight": "Moonlight",
     "dialogOptionAppCardHighlightGradientNightSteel": "Night Steel",
+    "dialogOptionAppCardHighlightStyleBlink": "Parpadeo",
+    "dialogOptionAppCardHighlightStyleRotate": "Rotación",
     "dialogTextNoFileExplorer": "Por favor, instale un gestor de archivos para seleccionar una imagen.",
     "dialogTitleBackButtonAction": "Elegir la acción del botón 'Atrás'",
     "dialogTitleAppCardHighlightGradient": "Elegir gradiente de resaltado",
+    "dialogTitleAppCardHighlightStyle": "Elegir estilo de resaltado",
     "disambiguateCategoryTitle": "{title} (Categoría)",
     "@disambiguateCategoryTitle": {
         "placeholders": {

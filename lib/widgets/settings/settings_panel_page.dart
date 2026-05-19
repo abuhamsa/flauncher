@@ -17,6 +17,7 @@
  */
 
 import 'package:flauncher/providers/apps_service.dart';
+import 'package:flauncher/models/app_card_highlight_animation_style.dart';
 import 'package:flauncher/models/app_card_highlight_gradient_preset.dart';
 import 'package:flauncher/providers/settings_service.dart';
 import 'package:flauncher/widgets/ensure_visible.dart';
@@ -152,6 +153,25 @@ class SettingsPanelPage extends StatelessWidget {
                     ),
                     onPressed: () async => await _appCardHighlightGradientDialog(context),
                   ),
+                  TextButton(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.autorenew),
+                        Container(width: 8),
+                        Expanded(
+                          child: Text(localizations.appCardHighlightStyle, style: Theme.of(context).textTheme.bodyMedium),
+                        ),
+                        Text(
+                          _animationStyleLabel(
+                            localizations,
+                            parseAppCardHighlightAnimationStyle(settingsService.appCardHighlightAnimationStyle),
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                    onPressed: () async => await _appCardHighlightStyleDialog(context),
+                  ),
                   RoundedSwitchListTile(
                     value: settingsService.appKeyClickEnabled,
                     onChanged: (value) => settingsService.setAppKeyClickEnabled(value),
@@ -266,6 +286,33 @@ class SettingsPanelPage extends StatelessWidget {
     }
   }
 
+  Future<void> _appCardHighlightStyleDialog(BuildContext context) async {
+    AppLocalizations localizations = AppLocalizations.of(context)!;
+    SettingsService service = context.read<SettingsService>();
+
+    final selectedStyle = parseAppCardHighlightAnimationStyle(service.appCardHighlightAnimationStyle);
+    final newStyle = await showDialog<AppCardHighlightAnimationStyle>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(localizations.dialogTitleAppCardHighlightStyle),
+        children: [
+          SimpleDialogOption(
+            child: Text(localizations.dialogOptionAppCardHighlightStyleRotate),
+            onPressed: () => Navigator.pop(context, AppCardHighlightAnimationStyle.rotate),
+          ),
+          SimpleDialogOption(
+            child: Text(localizations.dialogOptionAppCardHighlightStyleBlink),
+            onPressed: () => Navigator.pop(context, AppCardHighlightAnimationStyle.blink),
+          ),
+        ],
+      ),
+    );
+
+    if (newStyle != null && newStyle != selectedStyle) {
+      await service.setAppCardHighlightAnimationStyle(newStyle.name);
+    }
+  }
+
   String _gradientPresetLabel(AppLocalizations localizations, AppCardHighlightGradientPreset preset) {
     switch (preset) {
       case AppCardHighlightGradientPreset.moonlight:
@@ -274,6 +321,15 @@ class SettingsPanelPage extends StatelessWidget {
         return localizations.dialogOptionAppCardHighlightGradientAuroraBlue;
       case AppCardHighlightGradientPreset.nightSteel:
         return localizations.dialogOptionAppCardHighlightGradientNightSteel;
+    }
+  }
+
+  String _animationStyleLabel(AppLocalizations localizations, AppCardHighlightAnimationStyle style) {
+    switch (style) {
+      case AppCardHighlightAnimationStyle.rotate:
+        return localizations.dialogOptionAppCardHighlightStyleRotate;
+      case AppCardHighlightAnimationStyle.blink:
+        return localizations.dialogOptionAppCardHighlightStyleBlink;
     }
   }
 }
