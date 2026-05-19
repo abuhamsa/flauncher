@@ -17,6 +17,7 @@
  */
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flauncher/app_image_type.dart';
 import 'package:flauncher/models/app_card_highlight_animation_style.dart';
@@ -160,15 +161,14 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                           builder: (context, child) {
                             if (style == AppCardHighlightAnimationStyle.blink) {
                               final phase = _animation.value;
-                              final colorIndex = (phase * palette.colors.length).floor() % palette.colors.length;
-                              final localPhase = (phase * palette.colors.length) % 1;
-                              final pulse = 1 - (2 * localPhase - 1).abs();
-                              final alpha = 0.35 + (0.65 * pulse);
+                              final color = _blinkColorForPhase(palette, phase);
+                              final pulse = 0.5 + 0.5 * math.sin(phase * math.pi * 2);
+                              final alpha = 0.55 + (0.30 * pulse);
 
                               return IgnorePointer(
                                 child: CustomPaint(
                                   painter: _SolidBorderPainter(
-                                    color: palette.colors[colorIndex].withOpacity(alpha),
+                                    color: color.withOpacity(alpha),
                                   ),
                                   child: const SizedBox.expand(),
                                 ),
@@ -420,6 +420,23 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
           stops: [0.0, 0.34, 0.78, 1.0],
         );
     }
+  }
+
+  Color _blinkColorForPhase(_BorderGradientPalette palette, double phase) {
+    final colors = palette.colors;
+    if (colors.isEmpty) {
+      return Colors.white;
+    }
+
+    if (colors.length == 1) {
+      return colors.first;
+    }
+
+    final segment = phase * (colors.length - 1);
+    final index = segment.floor().clamp(0, colors.length - 2);
+    final localT = Curves.easeInOut.transform(segment - index);
+
+    return Color.lerp(colors[index], colors[index + 1], localT) ?? colors[index];
   }
 }
 
