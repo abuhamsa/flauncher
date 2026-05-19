@@ -17,8 +17,11 @@
  */
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flauncher/app_image_type.dart';
+import 'package:flauncher/models/app_card_highlight_animation_style.dart';
+import 'package:flauncher/models/app_card_highlight_gradient_preset.dart';
 import 'package:flauncher/providers/apps_service.dart';
 import 'package:flauncher/providers/settings_service.dart';
 import 'package:flauncher/widgets/application_info_panel.dart';
@@ -63,7 +66,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     lowerBound: 0,
     upperBound: 1,
     duration: const Duration(
-      milliseconds: 2800,
+      milliseconds: 3200,
     ),
   );
 
@@ -134,28 +137,51 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       child: Container(color: Colors.black),
                     ),
                   ),
-                  Selector<SettingsService, bool>(
-                    selector: (_, settingsService) => settingsService.appHighlightAnimationEnabled && shouldHighlight,
-                    builder: (context, highlight, _) {
+                  Selector<SettingsService, Tuple3<bool, String, String>>(
+                    selector: (_, settingsService) => Tuple3(
+                      settingsService.appHighlightAnimationEnabled && shouldHighlight,
+                      settingsService.appCardHighlightGradientPreset,
+                      settingsService.appCardHighlightAnimationStyle,
+                    ),
+                    builder: (context, config, _) {
+                      final highlight = config.item1;
+                      final preset = parseAppCardHighlightGradientPreset(config.item2);
+                      final style = parseAppCardHighlightAnimationStyle(config.item3);
+                      final palette = _paletteForPreset(preset);
+
+                      if (!shouldHighlight) {
+                        _animation.stop();
+                        return const SizedBox();
+                      }
+
                       if (highlight) {
                         _animation.repeat();
                         return AnimatedBuilder(
                           animation: _animation,
                           builder: (context, child) {
-                            final phase = _animation.value;
-                            final whitePhase = phase < 0.5;
-                            final localPhase = (phase % 0.5) / 0.5;
-                            final alpha = (255 * (1 - (2 * localPhase - 1).abs())).round();
+                            if (style == AppCardHighlightAnimationStyle.blink) {
+                              final phase = _animation.value;
+                              final color = _blinkColorForPhase(palette, phase);
+                              final pulse = 0.5 + 0.5 * math.sin(phase * math.pi * 2);
+                              final alpha = 0.55 + (0.30 * pulse);
+
+                              return IgnorePointer(
+                                child: CustomPaint(
+                                  painter: _SolidBorderPainter(
+                                    color: color.withOpacity(alpha),
+                                  ),
+                                  child: const SizedBox.expand(),
+                                ),
+                              );
+                            }
 
                             return IgnorePointer(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: (whitePhase ? Colors.white : Colors.black).withAlpha(alpha),
-                                    width: 3,
-                                  ),
+                              child: CustomPaint(
+                                painter: _SweepBorderPainter(
+                                  rotation: _animation.value,
+                                  palette: palette,
                                 ),
+                                child: const SizedBox.expand(),
                               ),
                             );
                           },
@@ -163,7 +189,12 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       }
 
                       _animation.stop();
-                      return const SizedBox();
+                      return IgnorePointer(
+                        child: CustomPaint(
+                          painter: _SweepBorderPainter(rotation: 0, palette: palette),
+                          child: const SizedBox.expand(),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -354,5 +385,133 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     if (result == ApplicationInfoPanelResult.reorderApp) {
       setState(() => _moving = true);
     }
+  }
+
+  _BorderGradientPalette _paletteForPreset(AppCardHighlightGradientPreset preset) {
+    switch (preset) {
+      case AppCardHighlightGradientPreset.moonlight:
+        return const _BorderGradientPalette(
+          colors: [
+            Color(0xFFEAF6FF),
+            Color(0xFF7FD9FF),
+            Color(0xFF2B3A8A),
+            Color(0xFFEAF6FF),
+          ],
+          stops: [0.0, 0.32, 0.74, 1.0],
+        );
+      case AppCardHighlightGradientPreset.auroraBlue:
+        return const _BorderGradientPalette(
+          colors: [
+            Color(0xFFD9F3FF),
+            Color(0xFF4FC3F7),
+            Color(0xFF5A3FA0),
+            Color(0xFFD9F3FF),
+          ],
+          stops: [0.0, 0.30, 0.76, 1.0],
+        );
+      case AppCardHighlightGradientPreset.nightSteel:
+        return const _BorderGradientPalette(
+          colors: [
+            Color(0xFFF2F7FF),
+            Color(0xFF9BB8D6),
+            Color(0xFF1E2A44),
+            Color(0xFFF2F7FF),
+          ],
+          stops: [0.0, 0.34, 0.78, 1.0],
+        );
+    }
+  }
+
+  Color _blinkColorForPhase(_BorderGradientPalette palette, double phase) {
+    final colors = palette.colors;
+    if (colors.isEmpty) {
+      return Colors.white;
+    }
+
+    if (colors.length == 1) {
+      return colors.first;
+    }
+
+    final segment = phase * (colors.length - 1);
+    final index = segment.floor().clamp(0, colors.length - 2);
+    final localT = Curves.easeInOut.transform(segment - index);
+
+    return Color.lerp(colors[index], colors[index + 1], localT) ?? colors[index];
+  }
+}
+
+class _BorderGradientPalette {
+  final List<Color> colors;
+  final List<double> stops;
+
+  const _BorderGradientPalette({required this.colors, required this.stops});
+}
+
+class _SweepBorderPainter extends CustomPainter {
+  final double rotation;
+  final _BorderGradientPalette palette;
+  static const double _strokeWidth = 3;
+  static const double _cardRadius = 8;
+  static const double _tau = 6.283185307179586;
+
+  const _SweepBorderPainter({required this.rotation, required this.palette});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final inset = _strokeWidth / 2;
+    final innerRadius = _cardRadius - inset;
+    final rrect = RRect.fromRectAndRadius(
+      rect.deflate(inset),
+      Radius.circular(innerRadius),
+    );
+    final shader = SweepGradient(
+      colors: palette.colors,
+      stops: palette.stops,
+      transform: GradientRotation(rotation * _tau),
+    ).createShader(rect);
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..shader = shader;
+
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SweepBorderPainter oldDelegate) {
+    return oldDelegate.rotation != rotation || oldDelegate.palette != palette;
+  }
+}
+
+class _SolidBorderPainter extends CustomPainter {
+  final Color color;
+  static const double _strokeWidth = 3;
+  static const double _cardRadius = 8;
+
+  const _SolidBorderPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final inset = _strokeWidth / 2;
+    final innerRadius = _cardRadius - inset;
+    final rrect = RRect.fromRectAndRadius(
+      rect.deflate(inset),
+      Radius.circular(innerRadius),
+    );
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..color = color;
+
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SolidBorderPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
