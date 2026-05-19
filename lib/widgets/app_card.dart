@@ -63,7 +63,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     lowerBound: 0,
     upperBound: 1,
     duration: const Duration(
-      milliseconds: 2800,
+      milliseconds: 3200,
     ),
   );
 
@@ -357,22 +357,30 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
 class _SweepBorderPainter extends CustomPainter {
   final double rotation;
+  static const double _strokeWidth = 3;
+  static const double _cardRadius = 8;
+  static const double _tau = 6.283185307179586;
 
   const _SweepBorderPainter({required this.rotation});
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final rrect = RRect.fromRectAndRadius(rect.deflate(1.5), const Radius.circular(8));
+    final inset = _strokeWidth / 2;
+    final innerRadius = _cardRadius - inset;
+    final rrect = RRect.fromRectAndRadius(
+      rect.deflate(inset),
+      Radius.circular(innerRadius),
+    );
     final shader = SweepGradient(
       colors: const [Colors.black, Colors.white, Colors.black],
       stops: const [0.0, 0.5, 1.0],
-      transform: GradientRotation(rotation * 2 * 3.141592653589793),
+      transform: GradientRotation(rotation * _tau),
     ).createShader(rect);
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = _strokeWidth
       ..shader = shader;
 
     canvas.drawRRect(rrect, paint);
