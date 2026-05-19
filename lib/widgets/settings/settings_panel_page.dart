@@ -17,6 +17,7 @@
  */
 
 import 'package:flauncher/providers/apps_service.dart';
+import 'package:flauncher/models/app_card_highlight_gradient_preset.dart';
 import 'package:flauncher/providers/settings_service.dart';
 import 'package:flauncher/widgets/ensure_visible.dart';
 import 'package:flauncher/widgets/settings/applications_panel_page.dart';
@@ -132,6 +133,25 @@ class SettingsPanelPage extends StatelessWidget {
                     title: Text(localizations.appCardHighlightAnimation, style: Theme.of(context).textTheme.bodyMedium),
                     secondary: Icon(Icons.filter_center_focus),
                   ),
+                  TextButton(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.gradient),
+                        Container(width: 8),
+                        Expanded(
+                          child: Text(localizations.appCardHighlightGradient, style: Theme.of(context).textTheme.bodyMedium),
+                        ),
+                        Text(
+                          _gradientPresetLabel(
+                            localizations,
+                            parseAppCardHighlightGradientPreset(settingsService.appCardHighlightGradientPreset),
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                    onPressed: () async => await _appCardHighlightGradientDialog(context),
+                  ),
                   RoundedSwitchListTile(
                     value: settingsService.appKeyClickEnabled,
                     onChanged: (value) => settingsService.setAppKeyClickEnabled(value),
@@ -212,6 +232,48 @@ class SettingsPanelPage extends StatelessWidget {
 
     if (formatTuple != null) {
       await service.setDateTimeFormat(formatTuple.item1, formatTuple.item2);
+    }
+  }
+
+  Future<void> _appCardHighlightGradientDialog(BuildContext context) async {
+    AppLocalizations localizations = AppLocalizations.of(context)!;
+    SettingsService service = context.read<SettingsService>();
+
+    final selectedPreset = parseAppCardHighlightGradientPreset(service.appCardHighlightGradientPreset);
+    final newPreset = await showDialog<AppCardHighlightGradientPreset>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(localizations.dialogTitleAppCardHighlightGradient),
+        children: [
+          SimpleDialogOption(
+            child: Text(localizations.dialogOptionAppCardHighlightGradientMoonlight),
+            onPressed: () => Navigator.pop(context, AppCardHighlightGradientPreset.moonlight),
+          ),
+          SimpleDialogOption(
+            child: Text(localizations.dialogOptionAppCardHighlightGradientAuroraBlue),
+            onPressed: () => Navigator.pop(context, AppCardHighlightGradientPreset.auroraBlue),
+          ),
+          SimpleDialogOption(
+            child: Text(localizations.dialogOptionAppCardHighlightGradientNightSteel),
+            onPressed: () => Navigator.pop(context, AppCardHighlightGradientPreset.nightSteel),
+          ),
+        ],
+      ),
+    );
+
+    if (newPreset != null && newPreset != selectedPreset) {
+      await service.setAppCardHighlightGradientPreset(newPreset.name);
+    }
+  }
+
+  String _gradientPresetLabel(AppLocalizations localizations, AppCardHighlightGradientPreset preset) {
+    switch (preset) {
+      case AppCardHighlightGradientPreset.moonlight:
+        return localizations.dialogOptionAppCardHighlightGradientMoonlight;
+      case AppCardHighlightGradientPreset.auroraBlue:
+        return localizations.dialogOptionAppCardHighlightGradientAuroraBlue;
+      case AppCardHighlightGradientPreset.nightSteel:
+        return localizations.dialogOptionAppCardHighlightGradientNightSteel;
     }
   }
 }

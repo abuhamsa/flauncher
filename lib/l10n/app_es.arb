@@ -4,6 +4,7 @@
     "addSection": "Agregar sección",
     "alphabetical": "Alfabético",
     "appCardHighlightAnimation": "Resaltar aplicaciones",
+    "appCardHighlightGradient": "Gradiente de resaltado",
     "appInfo": "Datos de la aplicación",
     "appKeyClick": "Sonido al presionar una tecla",
     "applications": "Aplicaciones",
@@ -18,8 +19,12 @@
     "dialogOptionBackButtonActionDoNothing": "Nada",
     "dialogOptionBackButtonActionShowScreensaver": "Mostrar salvapantallas",
     "dialogOptionBackButtonActionShowClock": "Mostrar reloj",
+    "dialogOptionAppCardHighlightGradientAuroraBlue": "Aurora Blue",
+    "dialogOptionAppCardHighlightGradientMoonlight": "Moonlight",
+    "dialogOptionAppCardHighlightGradientNightSteel": "Night Steel",
     "dialogTextNoFileExplorer": "Por favor, instale un gestor de archivos para seleccionar una imagen.",
     "dialogTitleBackButtonAction": "Elegir la acción del botón 'Atrás'",
+    "dialogTitleAppCardHighlightGradient": "Elegir gradiente de resaltado",
     "disambiguateCategoryTitle": "{title} (Categoría)",
     "@disambiguateCategoryTitle": {
         "placeholders": {

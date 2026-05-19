@@ -19,6 +19,7 @@
 import 'dart:async';
 
 import 'package:flauncher/app_image_type.dart';
+import 'package:flauncher/models/app_card_highlight_gradient_preset.dart';
 import 'package:flauncher/providers/apps_service.dart';
 import 'package:flauncher/providers/settings_service.dart';
 import 'package:flauncher/widgets/application_info_panel.dart';
@@ -134,9 +135,16 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       child: Container(color: Colors.black),
                     ),
                   ),
-                  Selector<SettingsService, bool>(
-                    selector: (_, settingsService) => settingsService.appHighlightAnimationEnabled && shouldHighlight,
-                    builder: (context, highlight, _) {
+                  Selector<SettingsService, Tuple2<bool, String>>(
+                    selector: (_, settingsService) => Tuple2(
+                      settingsService.appHighlightAnimationEnabled && shouldHighlight,
+                      settingsService.appCardHighlightGradientPreset,
+                    ),
+                    builder: (context, config, _) {
+                      final highlight = config.item1;
+                      final preset = parseAppCardHighlightGradientPreset(config.item2);
+                      final palette = _paletteForPreset(preset);
+
                       if (!shouldHighlight) {
                         _animation.stop();
                         return const SizedBox();
@@ -148,7 +156,10 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                           animation: _animation,
                           builder: (context, child) => IgnorePointer(
                             child: CustomPaint(
-                              painter: _SweepBorderPainter(rotation: _animation.value),
+                              painter: _SweepBorderPainter(
+                                rotation: _animation.value,
+                                palette: palette,
+                              ),
                               child: const SizedBox.expand(),
                             ),
                           ),
@@ -158,7 +169,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       _animation.stop();
                       return IgnorePointer(
                         child: CustomPaint(
-                          painter: const _SweepBorderPainter(rotation: 0),
+                          painter: _SweepBorderPainter(rotation: 0, palette: palette),
                           child: const SizedBox.expand(),
                         ),
                       );
@@ -353,15 +364,58 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
       setState(() => _moving = true);
     }
   }
+
+  _BorderGradientPalette _paletteForPreset(AppCardHighlightGradientPreset preset) {
+    switch (preset) {
+      case AppCardHighlightGradientPreset.moonlight:
+        return const _BorderGradientPalette(
+          colors: [
+            Color(0xFFEAF6FF),
+            Color(0xFF7FD9FF),
+            Color(0xFF2B3A8A),
+            Color(0xFFEAF6FF),
+          ],
+          stops: [0.0, 0.32, 0.74, 1.0],
+        );
+      case AppCardHighlightGradientPreset.auroraBlue:
+        return const _BorderGradientPalette(
+          colors: [
+            Color(0xFFD9F3FF),
+            Color(0xFF4FC3F7),
+            Color(0xFF5A3FA0),
+            Color(0xFFD9F3FF),
+          ],
+          stops: [0.0, 0.30, 0.76, 1.0],
+        );
+      case AppCardHighlightGradientPreset.nightSteel:
+        return const _BorderGradientPalette(
+          colors: [
+            Color(0xFFF2F7FF),
+            Color(0xFF9BB8D6),
+            Color(0xFF1E2A44),
+            Color(0xFFF2F7FF),
+          ],
+          stops: [0.0, 0.34, 0.78, 1.0],
+        );
+    }
+  }
+}
+
+class _BorderGradientPalette {
+  final List<Color> colors;
+  final List<double> stops;
+
+  const _BorderGradientPalette({required this.colors, required this.stops});
 }
 
 class _SweepBorderPainter extends CustomPainter {
   final double rotation;
+  final _BorderGradientPalette palette;
   static const double _strokeWidth = 3;
   static const double _cardRadius = 8;
   static const double _tau = 6.283185307179586;
 
-  const _SweepBorderPainter({required this.rotation});
+  const _SweepBorderPainter({required this.rotation, required this.palette});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -373,8 +427,8 @@ class _SweepBorderPainter extends CustomPainter {
       Radius.circular(innerRadius),
     );
     final shader = SweepGradient(
-      colors: const [Colors.black, Colors.white, Colors.black],
-      stops: const [0.0, 0.5, 1.0],
+      colors: palette.colors,
+      stops: palette.stops,
       transform: GradientRotation(rotation * _tau),
     ).createShader(rect);
 
@@ -388,6 +442,6 @@ class _SweepBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SweepBorderPainter oldDelegate) {
-    return oldDelegate.rotation != rotation;
+    return oldDelegate.rotation != rotation || oldDelegate.palette != palette;
   }
 }
