@@ -137,33 +137,31 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                   Selector<SettingsService, bool>(
                     selector: (_, settingsService) => settingsService.appHighlightAnimationEnabled && shouldHighlight,
                     builder: (context, highlight, _) {
+                      if (!shouldHighlight) {
+                        _animation.stop();
+                        return const SizedBox();
+                      }
+
                       if (highlight) {
                         _animation.repeat();
                         return AnimatedBuilder(
                           animation: _animation,
-                          builder: (context, child) {
-                            final phase = _animation.value;
-                            final whitePhase = phase < 0.5;
-                            final localPhase = (phase % 0.5) / 0.5;
-                            final alpha = (255 * (1 - (2 * localPhase - 1).abs())).round();
-
-                            return IgnorePointer(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: (whitePhase ? Colors.white : Colors.black).withAlpha(alpha),
-                                    width: 3,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                          builder: (context, child) => IgnorePointer(
+                            child: CustomPaint(
+                              painter: _SweepBorderPainter(rotation: _animation.value),
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
                         );
                       }
 
                       _animation.stop();
-                      return const SizedBox();
+                      return IgnorePointer(
+                        child: CustomPaint(
+                          painter: const _SweepBorderPainter(rotation: 0),
+                          child: const SizedBox.expand(),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -354,5 +352,34 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     if (result == ApplicationInfoPanelResult.reorderApp) {
       setState(() => _moving = true);
     }
+  }
+}
+
+class _SweepBorderPainter extends CustomPainter {
+  final double rotation;
+
+  const _SweepBorderPainter({required this.rotation});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect.deflate(1.5), const Radius.circular(8));
+    final shader = SweepGradient(
+      colors: const [Colors.black, Colors.white, Colors.black],
+      stops: const [0.0, 0.5, 1.0],
+      transform: GradientRotation(rotation * 2 * 3.141592653589793),
+    ).createShader(rect);
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..shader = shader;
+
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SweepBorderPainter oldDelegate) {
+    return oldDelegate.rotation != rotation;
   }
 }
