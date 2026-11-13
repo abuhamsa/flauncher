@@ -148,6 +148,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       final preset = parseAppCardHighlightGradientPreset(config.item2);
                       final style = parseAppCardHighlightAnimationStyle(config.item3);
                       final palette = _paletteForPreset(preset);
+                      final referenceWidth = _borderReferenceCardWidth(context);
 
                       if (!shouldHighlight) {
                         _animation.stop();
@@ -169,6 +170,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                                 child: CustomPaint(
                                   painter: _SolidBorderPainter(
                                     color: color.withOpacity(alpha),
+                                    referenceWidth: referenceWidth,
                                   ),
                                   child: const SizedBox.expand(),
                                 ),
@@ -180,6 +182,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                                 painter: _SweepBorderPainter(
                                   rotation: _animation.value,
                                   palette: palette,
+                                  referenceWidth: referenceWidth,
                                 ),
                                 child: const SizedBox.expand(),
                               ),
@@ -191,7 +194,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       _animation.stop();
                       return IgnorePointer(
                         child: CustomPaint(
-                          painter: _SweepBorderPainter(rotation: 0, palette: palette),
+                          painter: _SweepBorderPainter(rotation: 0, palette: palette, referenceWidth: referenceWidth),
                           child: const SizedBox.expand(),
                         ),
                       );
@@ -294,6 +297,18 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   bool _shouldHighlight(BuildContext context)
   {
     return Focus.of(context).hasFocus;
+  }
+
+  /// Width of a card in a 6-column grid (the favorites layout) on the current
+  /// screen. A card this wide gets the full 3 px highlight border; other cards
+  /// get a proportional one (see [_highlightStrokeWidth]).
+  static const int _borderReferenceColumns = 6;
+
+  double _borderReferenceCardWidth(BuildContext context) {
+    // Same spacing as the grid layout: page padding (16 * 2),
+    // grid padding (16 * 2) and 16 px between columns.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    return (screenWidth - 64 - 16 * (_borderReferenceColumns - 1)) / _borderReferenceColumns;
   }
 
   Matrix4 _scaleTransform(BuildContext context) {
@@ -447,19 +462,32 @@ class _BorderGradientPalette {
   const _BorderGradientPalette({required this.colors, required this.stops});
 }
 
+const double _highlightMaxStrokeWidth = 3;
+
+/// Highlight border width proportional to the card width, relative to
+/// [referenceWidth] (a 6-column grid card, which gets the full 3 px).
+/// Clamped to 1–3 px.
+double _highlightStrokeWidth(Size size, double referenceWidth) {
+  if (!size.width.isFinite || size.width <= 0 || referenceWidth <= 0) {
+    return _highlightMaxStrokeWidth;
+  }
+  return (size.width * _highlightMaxStrokeWidth / referenceWidth).clamp(1.0, _highlightMaxStrokeWidth);
+}
+
 class _SweepBorderPainter extends CustomPainter {
   final double rotation;
   final _BorderGradientPalette palette;
-  static const double _strokeWidth = 3;
+  final double referenceWidth;
   static const double _cardRadius = 8;
   static const double _tau = 6.283185307179586;
 
-  const _SweepBorderPainter({required this.rotation, required this.palette});
+  const _SweepBorderPainter({required this.rotation, required this.palette, required this.referenceWidth});
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final inset = _strokeWidth / 2;
+    final strokeWidth = _highlightStrokeWidth(size, referenceWidth);
+    final inset = strokeWidth / 2;
     final innerRadius = _cardRadius - inset;
     final rrect = RRect.fromRectAndRadius(
       rect.deflate(inset),
@@ -473,7 +501,7 @@ class _SweepBorderPainter extends CustomPainter {
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = _strokeWidth
+      ..strokeWidth = strokeWidth
       ..shader = shader;
 
     canvas.drawRRect(rrect, paint);
@@ -481,21 +509,24 @@ class _SweepBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SweepBorderPainter oldDelegate) {
-    return oldDelegate.rotation != rotation || oldDelegate.palette != palette;
+    return oldDelegate.rotation != rotation ||
+        oldDelegate.palette != palette ||
+        oldDelegate.referenceWidth != referenceWidth;
   }
 }
 
 class _SolidBorderPainter extends CustomPainter {
   final Color color;
-  static const double _strokeWidth = 3;
+  final double referenceWidth;
   static const double _cardRadius = 8;
 
-  const _SolidBorderPainter({required this.color});
+  const _SolidBorderPainter({required this.color, required this.referenceWidth});
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final inset = _strokeWidth / 2;
+    final strokeWidth = _highlightStrokeWidth(size, referenceWidth);
+    final inset = strokeWidth / 2;
     final innerRadius = _cardRadius - inset;
     final rrect = RRect.fromRectAndRadius(
       rect.deflate(inset),
@@ -504,7 +535,7 @@ class _SolidBorderPainter extends CustomPainter {
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = _strokeWidth
+      ..strokeWidth = strokeWidth
       ..color = color;
 
     canvas.drawRRect(rrect, paint);
@@ -512,6 +543,6 @@ class _SolidBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SolidBorderPainter oldDelegate) {
-    return oldDelegate.color != color;
+    return oldDelegate.color != color || oldDelegate.referenceWidth != referenceWidth;
   }
 }
